@@ -46,13 +46,13 @@ This is the default template:
 
 ```html
 <div class="tweet">
-  <p class="tweet-body">{body}</p>
+  <p class="tweet-body">{{body}}</p>
   <div class="tweet-metadata">
     <span class="tweet-metadata-item tweet-username">
-      <a href="{profile_url}" class="tweet-profile-link" rel="external">{username}</a>
+      <a href="{{profile_url}}" class="tweet-profile-link" rel="external">{{username}}</a>
     </span>
     <span class="tweet-metadata-item tweet-date">
-      <a href="{permalink}" class="tweet-permalink" rel="external">{posted_date_ago}</a>
+      <a href="{{permalink}}" class="tweet-permalink" rel="external">{{posted_date_ago}}</a>
     </span>
   </div>
 </div>
