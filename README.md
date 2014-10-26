@@ -19,16 +19,12 @@ Each widget can be configured with these options:
     * Make sure that this user's tweets are public! If the user is private, then you will not get the feed.
 * **Number of tweets** - The number of tweets you'd like to fetch.
     * 5 tweets are fetched at a time by default.
-* **Show replies?** - If checked, the user's replies will be fetched in addition to the user's tweets.
-    * By default, this option is unchecked.
 
 ### Advanced Options
 
 The following advanced options are available as well:
 
 * **Tweet template** - The template of the tweet (see below for more information).
-* **Highlight links?** - If checked, any URLs found in the tweet will be parsed and set as `<a>` tags.
-   * By default, this option is checked.
 
 #### Tweet template
 

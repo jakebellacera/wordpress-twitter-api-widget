@@ -12,3 +12,10 @@
 
 // Prevent access to the plugin
 defined('ABSPATH') or die();
+// Widget code
+require_once('widget.php');
+
+// Register the widget
+add_action('widgets_init',
+     create_function('', 'return register_widget("TwitterAPIWidget");')
+);
