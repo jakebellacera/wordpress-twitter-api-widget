@@ -35,8 +35,8 @@ The following advanced options are available as well:
 The template that is used to display each tweet. Available template variables are:
 
 * `{{permalink}}` - The permalink to the tweet on twitter.com.
-* `{{posted_date}}` - The date of tweet.
-    * Optionally, you can add a `format` argument that accepts a [strtotime][php-doc-strtotime] string. Usage is: `{{posted_date|format:"%m/%d/%Y"}}`.
+* `{{posted_date}}` - The date of tweet. The default format is `n/j/Y`.
+    * Optionally, you can add a `format` argument that accepts a [Date Format][php-doc-date-format] string. Usage is: `{{posted_date|format:"n/j/Y"}}`.
 * `{{posted_date_ago}` - The relative date of the tweet (e.g. "10 minutes ago").
 * `{{body}}` - The tweet's body.
 * `{{username}}` - The user's name.
@@ -68,4 +68,4 @@ Have other questions? Message me on [Twitter (@jakebellacera)][twitter-url].
 [repo-releases]: https://github.com/jakebellacera/wordpress-twitter-widget/releases
 [repo-issues]: https://github.com/jakebellacera/wordpress-twitter-widget/issues
 [twitter-url]: https://twitter.com/jakebellacera
-[php-doc-strtotime]: http://php.net/manual/en/function.strtotime.php
+[php-doc-date-format]: http://php.net/manual/en/function.date.php
