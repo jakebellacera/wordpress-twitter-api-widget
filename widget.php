@@ -101,13 +101,13 @@ class TwitterAPIWidget extends WP_Widget {
     $all_fields = $this->get_default_fields();
 
     // Display all of the basic fields
-    foreach ($this->form_field_values($instance, 'basic') as $name => $value) {
+    foreach ($this->get_form_field_values($instance, 'basic') as $name => $value) {
       $field_info = $all_fields[$name];
       echo $this->form_group_html($name, $value, $field_info);
     }
 
     // Display all of the advanced fields
-    foreach ($this->form_field_values($instance, 'advanced') as $name => $value) {
+    foreach ($this->get_form_field_values($instance, 'advanced') as $name => $value) {
       $field_info = $all_fields[$name];
       echo $this->form_group_html($name, $value, $field_info);
     }
@@ -168,7 +168,7 @@ class TwitterAPIWidget extends WP_Widget {
 	 */
 	public function update( $new_instance, $old_instance ) {
 		$instance = array();
-    foreach ($this->form_field_values($new_instance) as $name => $value) {
+    foreach ($this->get_form_field_values($new_instance) as $name => $value) {
   		$instance[$name] = $value;
     }
 
@@ -205,19 +205,26 @@ class TwitterAPIWidget extends WP_Widget {
    * @param string $instance Saved values from the database
    * @param string $group    The name of the group of fields. If this is omitted, then all groups will be returned.
    */
-  private function form_field_values( $instance, $group ) {
+  private function get_form_field_values( $instance, $group ) {
     $fields = array();
-    $defaults = $this->get_default_fields($group);
 
-    foreach (array_keys($defaults) as $field_name) {
-      if ( isset( $instance[$field_name]) ) {
-        $fields[$field_name] = $instance[$field_name];
-      } else {
-        $fields[$field_name] = $defaults[$field_name]['default_value'];
-      }
+    foreach ($this->get_default_field_names($group) as $field_name) {
+      $fields[$field_name] = $this->get_form_field_value($instance, $field_name);
     }
 
     return $fields;
+  }
+
+  private function get_form_field_value( $instance, $field_name ) {
+
+    if (isset($instance[$field_name])) {
+      $value = $instance[$field_name];
+    } else {
+      $defaults = $this->get_default_fields();
+      $value = $defaults[$field_name]['default_value'];
+    }
+
+    return $value;
   }
 
   private function default_tweet_template() {
