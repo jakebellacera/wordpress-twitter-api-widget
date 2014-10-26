@@ -1,6 +1,6 @@
-# Wordpress Twitter Widget
+# Twitter API Widget for Wordpress
 
-This is a basic widget for Wordpress that displays your Twitter feed.
+This is a simple widget for Wordpress that displays your Twitter feed through the Twitter API. This plugin is intended for users that are familiar with CSS as it _will not_ be styled out of the box.
 
 ## Installation
 
@@ -64,8 +64,8 @@ Want to help? Fork [this repo][repo-url] on GitHub and submit a pull request! Ev
 
 Have other questions? Message me on [Twitter (@jakebellacera)][twitter-url].
 
-[repo-url]: https://github.com/jakebellacera/wordpress-twitter-widget
-[repo-releases]: https://github.com/jakebellacera/wordpress-twitter-widget/releases
-[repo-issues]: https://github.com/jakebellacera/wordpress-twitter-widget/issues
+[repo-url]: https://github.com/jakebellacera/wordpress-twitter-api-widget
+[repo-releases]: https://github.com/jakebellacera/wordpress-twitter-api-widget/releases
+[repo-issues]: https://github.com/jakebellacera/wordpress-twitter-api-widget/issues
 [twitter-url]: https://twitter.com/jakebellacera
 [php-doc-date-format]: http://php.net/manual/en/function.date.php
