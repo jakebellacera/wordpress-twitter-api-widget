@@ -10,4 +10,5 @@
  * License: MIT
  */
 
+// Prevent access to the plugin
 defined('ABSPATH') or die();
