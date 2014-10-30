@@ -325,7 +325,7 @@ class TwitterAPIWidget extends WP_Widget {
         $post['permalink'] = $this->get_tweet_permalink($tweet->user->screen_name, $tweet->id);
         $post['posted_date'] = $timestamp;
         $post['posted_date_ago'] = $this->relative_date($timestamp);
-        $post['body'] = $tweet->text;
+        $post['body'] = $this->twitterify($tweet->text);
         $post['username'] = $tweet->user->screen_name;
         $post['profile_url'] = $this->get_twitter_profile_url($tweet->user->screen_name);
 
@@ -335,6 +335,21 @@ class TwitterAPIWidget extends WP_Widget {
     }
 
     return $feed;
+  }
+
+  /**
+   * Returns a string with twitter links highlighted.
+   *
+   * @see http://www.snipe.net/2009/09/php-twitter-clickable-links/
+   *
+   * @param string $text The text with the links that should be highlighted.
+   */
+  private function twitterify($text) {
+    $text = preg_replace("#(^|[\n ])([\w]+?://[\w]+[^ \"\n\r\t< ]*)#", "\\1<a href=\"\\2\" target=\"_blank\">\\2", $text);
+    $text = preg_replace("#(^|[\n ])((www|ftp)\.[^ \"\t\n\r< ]*)#", "\\1<a href=\"http://\\2\" target=\"_blank\">\\2", $text);
+    $text = preg_replace("/@(\w+)/", "<a href=\"https://www.twitter.com/\\1\" target=\"_blank\">@\\1</a>", $text);
+    $text = preg_replace("/#(\w+)/", "<a href=\"https://twitter.com/search?q=%23\\1\" target=\"_blank\">#\\1</a>", $text);
+    return $text;
   }
 
   /**
