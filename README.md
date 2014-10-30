@@ -45,10 +45,10 @@ This is the default template:
   <p class="tweet-body">{{body}}</p>
   <div class="tweet-metadata">
     <span class="tweet-metadata-item tweet-username">
-      <a href="{{profile_url}}" class="tweet-profile-link" rel="external">{{username}}</a>
+      <a href="{{profile_url}}" class="tweet-profile-link" rel="external">@{{username}}</a>
     </span>
     <span class="tweet-metadata-item tweet-date">
-      <a href="{{permalink}}" class="tweet-permalink" rel="external">{{posted_date_ago}}</a>
+      <a href="{{permalink}}" class="tweet-permalink" rel="external">Posted on {{posted_date}}</a>
     </span>
   </div>
 </div>

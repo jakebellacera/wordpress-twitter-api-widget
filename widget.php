@@ -83,12 +83,65 @@ class TwitterAPIWidget extends WP_Widget {
 	 */
 	public function widget( $args, $instance ) {
     echo $args['before_widget'];
+
 		if ( ! empty( $instance['title'] ) ) {
 			echo $args['before_title'] . apply_filters( 'twitter_api_widget', $instance['title'] ). $args['after_title'];
 		}
-		echo __( 'Hello, World!', 'twitter_api_widget' );
+
+    $twitter_username = $this->get_form_field_value($instance, 'twitter_username');
+
+    // Get the feed
+    $feed = $this->fetch_tweets($instance);
+
+    ?>
+
+    <ul class="tweets-listing">
+      <?php if (count($feed['timeline']) > 0) : ?>
+        <?php foreach($feed['timeline'] as $tweet) : ?>
+          <li class="tweets-listing-item">
+            <?php echo $this->tweet_html($instance, $tweet); ?>
+          </li>
+        <?php endforeach; ?>
+      <?php else: ?>
+        <li class="tweets-listing-item tweets-listing-item-none">This user has not posted any tweets yet.</li>
+      <?php endif; ?>
+    </ul>
+
+    <a href="<?php echo $this->get_twitter_profile_url($twitter_username); ?>" class="tweets-listing-profile-link" title="Follow @<?php echo $twitter_username; ?>" data-twitter-username="<?php echo $twitter_username; ?>">Follow @<?php echo $twitter_username; ?></a>
+
+    <?php
+
 		echo $args['after_widget'];
 	}
+
+  /**
+   * Renders a tweet into HTML.
+   *
+   * @see TwitterAPIWidget::parse_timeline
+   *
+   * @param array $instance Saved values from database.
+   * @param array $tweet    A Tweet from a parsed Timeline.
+   */
+  private function tweet_html($instance, $tweet) {
+    $template = $this->get_form_field_value($instance, 'tweet_template');
+
+    // Replace variables
+    $html = $template;
+    $html = preg_replace_callback("(\{\{posted_date(\|format:\"(.*)?\")?\}\})", function ($matches) use ($tweet) {
+      if (isset($matches[2])) {
+        $format = $matches[2];
+      } else {
+        $format = '%m/%d/%Y';
+      }
+      return strftime($format, $tweet['posted_date']);
+    }, $html);
+    $html = str_replace('{{permalink}}', $tweet['permalink'], $html);
+    $html = str_replace('{{posted_date_ago}}', $tweet['posted_date_ago'], $html);
+    $html = str_replace('{{username}}', $tweet['username'], $html);
+    $html = str_replace('{{profile_url}}', $tweet['profile_url'], $html);
+    $html = str_replace('{{body}}', $tweet['body'], $html);
+    return $html;
+  }
 
 	/**
 	 * Back-end widget form.
@@ -176,6 +229,183 @@ class TwitterAPIWidget extends WP_Widget {
 	}
 
   /**
+   * Fetches tweets and returns the timeline.
+   *
+   * @param array $instance Previously saved widget values from the database.
+   */
+  private function fetch_tweets($instance) {
+    $username = $this->get_form_field_value($instance, 'twitter_username');
+    $amount = $this->get_form_field_value($instance, 'number_tweets');
+
+    // Before we do anything, check the cache for a recently fetched twitter feed.
+    // We watch to bust the cache if it's been greater than 15 minutes
+    if (get_option('twitter_api_widget_feed')) {
+      $old_feed = get_option('twitter_api_widget_feed');
+      if (time() - $old_feed['fetched_at'] < (60 * 15)) {
+        return $old_feed;
+      }
+    }
+
+    // Since we need to fetch a new feed from the Twitter API, we should use the
+    // Bearer Token approach to keep rate limits independent to this application.
+    //
+    // We'll check the cache for the token first before fetching a new one from Twitter.
+    if (get_option('twitter_api_widget_bearer_token')) {
+      $bearer_token = get_option('twitter_api_widget_bearer_token');
+      $cb = \Codebird\Codebird::getInstance();
+    } else {
+      \Codebird\Codebird::setConsumerKey($this->get_form_field_value($instance, 'consumer_key'), $this->get_form_field_value($instance, 'consumer_secret'));
+      $cb = \Codebird\Codebird::getInstance();
+      $reply = $cb->oauth2_token();
+      $bearer_token = $reply->access_token;
+      add_option('twitter_api_widget_bearer_token', $bearer_token); // Store it
+    }
+
+    \Codebird\Codebird::setBearerToken($bearer_token);
+
+    // Now fetch the tweets
+    $timeline = $this->fetch_user_timeline($cb, $username);
+    $parsed_timeline = $this->parse_timeline($timeline, $amount);
+    $feed = array(
+      'fetched_at' => time(),
+      'timeline' => $parsed_timeline
+    );
+
+    // Update the cache
+    if (isset($old_feed)) {
+      update_option('twitter_api_widget_feed', $feed);
+    } else {
+      add_option('twitter_api_widget_feed', $feed);
+    }
+
+    return $feed;
+  }
+
+  /**
+   * Fetches the user timeline from the Twitter API via CodeBird. Limiting the number of tweets is done after the
+   *
+   * @see https://github.com/jublonet/codebird-php for CodeBird documentation.
+   * @see https://dev.twitter.com/rest/reference/get/statuses/user_timeline for API documentation.
+   *
+   * @param class  $cb       An instantiated CodeBird object.
+   * @param string $username The username for the user that you'd like to fetch the timeline from.
+   */
+  // feed has been fetched, as Twitter does not provide a way to accomplish this.
+  private function fetch_user_timeline($cb, $username) {
+    $api = 'statuses/userTimeline';
+    $params['screen_name'] = $username;
+    // It's best to fetch the maximum number of tweets possible because Twitter
+    // doesn't filter the results until after the tweets have been queried.
+    $params['count'] = 200;
+    $params['include_rts'] = '0';
+    $params['exclude_replies'] = '1';
+
+    return (array) $cb->$api($params, true);
+  }
+
+  /**
+   * Parses a "raw" Twitter timeline from Twitter's API.
+   *
+   * @see https://dev.twitter.com/rest/reference/get/statuses/user_timeline for an example of the response
+   *
+   * @param array   $timeline The Timeline array from a Twitter API response.
+   * @param integer $amount   The amount of tweets that should be displayed.
+   */
+  private function parse_timeline($timeline, $amount) {
+    $feed = array();
+    $count = intval($amount);
+
+    foreach ($timeline as $tweet) {
+      if ($i == $count) break;
+
+      if ($tweet->created_at) {
+        $post = array();
+        $datetime = new DateTime($tweet->created_at);
+        $timestamp = $datetime->format('U');
+        $post['permalink'] = $this->get_tweet_permalink($tweet->user->screen_name, $tweet->id);
+        $post['posted_date'] = $timestamp;
+        $post['posted_date_ago'] = $this->relative_date($timestamp);
+        $post['body'] = $tweet->text;
+        $post['username'] = $tweet->user->screen_name;
+        $post['profile_url'] = $this->get_twitter_profile_url($tweet->user->screen_name);
+
+        array_push($feed, $post);
+        $i++;
+      }
+    }
+
+    return $feed;
+  }
+
+  /**
+   * Pretty-prints a Twitter user's profile URL.
+   *
+   * @param string $username The user's username.
+   */
+  private function get_twitter_profile_url($username) {
+    return "https://twitter.com/$username";
+  }
+
+  /**
+   * Returns a Twitter status' (aka "Tweet") permalink URL.
+   *
+   * @param string $username The tweet's author.
+   * @param string $id       The ID of the tweet.
+   */
+  private function get_tweet_permalink($username, $id) {
+    return "https://twitter.com/$username/status/$id";
+  }
+
+  /**
+   * Returns a relative date string from a Date object.
+   *
+   * @param string Date
+   */
+  private function relative_date($date) {
+    $now = time();
+    $diff = $now - strtotime($date);
+
+    if ($diff < 60){
+        return sprintf($diff > 1 ? '%s seconds ago' : 'a second ago', $diff);
+    }
+
+    $diff = floor($diff/60);
+
+    if ($diff < 60){
+        return sprintf($diff > 1 ? '%s minutes ago' : 'one minute ago', $diff);
+    }
+
+    $diff = floor($diff/60);
+
+    if ($diff < 24){
+        return sprintf($diff > 1 ? '%s hours ago' : 'an hour ago', $diff);
+    }
+
+    $diff = floor($diff/24);
+
+    if ($diff < 7){
+        return sprintf($diff > 1 ? '%s days ago' : 'yesterday', $diff);
+    }
+
+    if ($diff < 30)
+    {
+        $diff = floor($diff / 7);
+
+        return sprintf($diff > 1 ? '%s weeks ago' : 'one week ago', $diff);
+    }
+
+    $diff = floor($diff/30);
+
+    if ($diff < 12){
+        return sprintf($diff > 1 ? '%s months ago' : 'last month', $diff);
+    }
+
+    $diff = date('Y', $now) - date('Y', $date);
+
+    return sprintf($diff > 1 ? '%s years ago' : 'last year', $diff);
+  }
+
+  /**
    * Gets a group of default fields.
    *
    * @param string $group The name of the group of fields. If this is omitted, then all groups will be returned.
@@ -215,6 +445,12 @@ class TwitterAPIWidget extends WP_Widget {
     return $fields;
   }
 
+  /**
+   * Gets a specific field name's value.
+   *
+   * @param string $instance   Saved values from the database
+   * @param string $field_name The name of the fields.
+   */
   private function get_form_field_value( $instance, $field_name ) {
 
     if (isset($instance[$field_name])) {
@@ -227,16 +463,19 @@ class TwitterAPIWidget extends WP_Widget {
     return $value;
   }
 
+  /**
+   * The default tweet template.
+   */
   private function default_tweet_template() {
     ob_start(); ?>
 <div class="tweet">
   <p class="tweet-body">{{body}}</p>
   <div class="tweet-metadata">
     <span class="tweet-metadata-item tweet-username">
-      <a href="{{profile_url}}" class="tweet-profile-link" rel="external">{{username}}</a>
+      <a href="{{profile_url}}" class="tweet-profile-link" rel="external">@{{username}}</a>
     </span>
     <span class="tweet-metadata-item tweet-date">
-      <a href="{{permalink}}" class="tweet-permalink" rel="external">{{posted_date_ago}}</a>
+      <a href="{{permalink}}" class="tweet-permalink" rel="external">Posted on {{posted_date}}</a>
     </span>
   </div>
 </div><?php
