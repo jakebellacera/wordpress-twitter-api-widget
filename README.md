@@ -4,9 +4,11 @@ This is a simple widget for Wordpress that displays your Twitter feed through th
 
 ## Installation
 
-1. Go to the [Releases section][repo-releases] of this project and download the latest release as a zip file.
-2. Unzip and place the folder into your Wordpress install's `wp-content/plugins` directory.
-3. In your Wordpress Admin panel, navigate to **Appearance > Widgets** and drag the "Twitter Widget" into a sidebar.
+1. Unzip and place the folder into your Wordpress install's `wp-content/plugins` directory.
+2. In your Wordpress Admin panel, navigate to the **Plugins** section and enable the "Twitter API Widget."
+3. In your Wordpress Admin panel, navigate to **Appearance > Widgets** and drag the "Twitter API" widget into a sidebar.
+4. Register a Twitter application at [Twitter's Application Manager](https://apps.twitter.com/).
+5. Set your newly registered application's Consumer key and secret in the widget's settings.
 
 ## Configuration
 
@@ -19,11 +21,6 @@ Each widget can be configured with these options:
     * Make sure that this user's tweets are public! If the user is private, then you will not get the feed.
 * **Number of tweets** - The number of tweets you'd like to fetch.
     * 5 tweets are fetched at a time by default.
-
-### Advanced Options
-
-The following advanced options are available as well:
-
 * **Tweet template** - The template of the tweet (see below for more information).
 
 #### Tweet template
@@ -45,10 +42,10 @@ This is the default template:
   <p class="tweet-body">{{body}}</p>
   <div class="tweet-metadata">
     <span class="tweet-metadata-item tweet-username">
-      <a href="{{profile_url}}" class="tweet-profile-link" rel="external">@{{username}}</a>
+      <a href="{{profile_url}}" class="tweet-profile-link" rel="external">{{username}}</a>
     </span>
     <span class="tweet-metadata-item tweet-date">
-      <a href="{{permalink}}" class="tweet-permalink" rel="external">Posted on {{posted_date}}</a>
+      <a href="{{permalink}}" class="tweet-permalink" rel="external">{{posted_date_ago}}</a>
     </span>
   </div>
 </div>
