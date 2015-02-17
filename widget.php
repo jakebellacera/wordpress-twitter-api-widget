@@ -239,8 +239,7 @@ class TwitterAPIWidget extends WP_Widget {
 
     // Before we do anything, check the cache for a recently fetched twitter feed.
     // We watch to bust the cache if it's been greater than 15 minutes
-    if (get_option('twitter_api_widget_feed')) {
-      $old_feed = get_option('twitter_api_widget_feed');
+    if ($old_feed = get_option('twitter_api_widget_feed')) {
       if (time() - $old_feed['fetched_at'] < (60 * 15)) {
         return $old_feed;
       }
